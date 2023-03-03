@@ -7,13 +7,44 @@ import { setupStats } from './StatsPanel';
 export function ObjectDetection(){
     const webcamRef = useRef(null);
     const canvasRef = useRef(null);
+    const detector = useRef(null);
     let stats;
+    let startInferenceTime, numInferences = 0;
+    let inferenceTimeSum = 0, lastPanelUpdate = 0;
+
+    const beginEstimateDetectionStats =() =>{
+        startInferenceTime = (performance || Date).now();
+    }
+
+    const endEstimateDetectionStats =() =>{
+        const endInferenceTime = (performance || Date).now();
+        inferenceTimeSum += endInferenceTime - startInferenceTime;
+        ++numInferences;
+    
+        const panelUpdateMilliseconds = 1000;
+        if (endInferenceTime - lastPanelUpdate >= panelUpdateMilliseconds) {
+            const averageInferenceTime = inferenceTimeSum / numInferences;
+            inferenceTimeSum = 0;
+            numInferences = 0;
+            stats.customFpsPanel.update(
+                1000.0 / averageInferenceTime, 120 /* maxValue */);
+            lastPanelUpdate = endInferenceTime;
+        }
+    }
+
+    const renderResult = async (video) =>{
+        beginEstimateDetectionStats();
+        if(detector !== null){
+            //perform detection here
+        }
+        endEstimateDetectionStats();
+    }
 
     const runDetection =() =>{
         stats = new setupStats();
         const camera = new Camera(webcamRef.current.video,{
             onFrame: async () =>{
-                
+                await renderResult(webcamRef.current.video);
             },
             facingMode:"environment",
             width: 640,
