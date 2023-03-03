@@ -1,6 +1,6 @@
 import React from 'react';
 
-export class DetectedObject extends React.Component{
+class DetectedObject extends React.Component{
     constructor(props){
         super(props);
         this.state = {
@@ -18,5 +18,6 @@ export class DetectedObject extends React.Component{
             </>
         );
     }
+};
 
-}
+export default DetectedObject;

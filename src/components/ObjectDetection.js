@@ -3,7 +3,7 @@ import Webcam from "react-webcam";
 import { Camera } from "@mediapipe/camera_utils";
 import { setupStats } from './StatsPanel';
 import MobileNetSSD from './Detector';
-
+import { drawRect } from './util';
 
 export function ObjectDetection(){
     const webcamRef = useRef(null);
@@ -34,11 +34,30 @@ export function ObjectDetection(){
     }
 
     const renderResult = async (video) =>{
+        let detections;
         beginEstimateDetectionStats();
         if(detector !== null){
-            //perform detection here
+            try{
+                detections = await detector.current.detect(video);
+            }catch(error){
+                detector.current.dispose();
+                detector.current = null;
+                alert(error);
+            }
         }
         endEstimateDetectionStats();
+        const canvasElement = canvasRef.current;
+        const canvasCtx = canvasElement.getContext('2d')
+        canvasElement.width = 640;
+        canvasElement.height = 480;
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if(detections && detections.length > 0){
+            drawRect(detections,canvasCtx);
+        }
+        canvasCtx.restore();
+
     }
 
     useEffect(()=>{
