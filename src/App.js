@@ -1,9 +1,10 @@
-import logo from './logo.svg';
 import './App.css';
+import { ObjectDetection } from './components/ObjectDetection';
 
 function App() {
   return (
     <div className="App">
+      <ObjectDetection />
     </div>
   );
 }
