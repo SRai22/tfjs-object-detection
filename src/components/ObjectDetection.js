@@ -2,6 +2,7 @@ import React, {useRef, useEffect} from 'react';
 import Webcam from "react-webcam";
 import { Camera } from "@mediapipe/camera_utils";
 import { setupStats } from './StatsPanel';
+import MobileNetSSD from './Detector';
 
 
 export function ObjectDetection(){
@@ -39,6 +40,15 @@ export function ObjectDetection(){
         }
         endEstimateDetectionStats();
     }
+
+    useEffect(()=>{
+        const loadDetector = async () =>{
+          detector.current = new MobileNetSSD();
+          await detector.current.setModelBackend("wasm");
+          await detector.current.load();
+        }
+        loadDetector();
+      }, []);
 
     const runDetection =() =>{
         stats = new setupStats();
