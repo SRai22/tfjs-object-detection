@@ -9,7 +9,12 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "react-webcam": "7.0.1",
+    "@mediapipe/camera_utils": "0.3.1675466862",
+    "@tensorflow/tfjs": "4.2.0",
+    "@tensorflow/tfjs-backend-wasm": "4.2.0",
+    "@tensorflow/tfjs-backend-webgpu": "0.0.1-alpha.17"
   },
   "scripts": {
     "start": "react-scripts start",
