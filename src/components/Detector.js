@@ -1,5 +1,6 @@
 import React from 'react';
-import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm"
+import * as tfWebGpu from"@tensorflow/tfjs-backend-webgpu";
+import * as tfjsWasm from "@tensorflow/tfjs-backend-wasm";
 import * as tf from '@tensorflow/tfjs-core';
 import * as tfconv from '@tensorflow/tfjs-converter';
 import { CLASSES } from './classes';
@@ -24,6 +25,17 @@ class MobileNetSSD extends React.Component{
     }
 
     async setModelBackend(backend){
+        if(backend === 'webgpu')
+        {
+            const adapter = await navigator.gpu.requestAdapter();
+            const device = await adapter.requestDevice();
+            console.log(device);
+            tf.registerBackend(
+                backend, async () =>{
+                    return new tfWebGpu.WebGPUBackend(device);
+                }
+            );
+        }
         await tf.setBackend(backend);
         await tf.ready();
     }
@@ -44,6 +56,19 @@ class MobileNetSSD extends React.Component{
         console.log("Model ready!");
     }
 
+    getImageSize(input){
+        if (input instanceof tf.Tensor) {
+          return {height: input.shape[0], width: input.shape[1]};
+        } else {
+          return {height: input.height, width: input.width};
+        }
+    }
+
+    toImageTensor(input){
+        const imageTensor = tf.browser.fromPixels(input);
+        return tf.image.resizeBilinear(imageTensor, [this.modelHeight, this.modelWidth]);
+    }
+
     /**
     * Detect objects for an image returning a list of bounding boxes with
     * assocated class and score.
@@ -57,7 +82,13 @@ class MobileNetSSD extends React.Component{
     * of detected objects. Value between 0 and 1. Defaults to 0.5.
     */
     async detect(img,maxNumBoxes = 20, minScore = 0.5) {
-        return this.infer(img, maxNumBoxes, minScore);
+        if (img == null) {
+            this.reset();
+            return [];
+        }
+        const imageTensor = img instanceof tf.Tensor ? img:this.toImageTensor(img);
+
+        return this.infer(imageTensor, maxNumBoxes, minScore);
     };
 
     /**
@@ -93,8 +124,8 @@ class MobileNetSSD extends React.Component{
             scores = result[0].dataSync();
             boxes  = result[1].dataSync();
         }else{
-            scores = result[0].data();
-            boxes  = result[1].data();
+            scores = await result[0].data();
+            boxes  = await result[1].data();
         }
 
         // clean the webgl tensors
@@ -103,15 +134,17 @@ class MobileNetSSD extends React.Component{
 
         const [maxScores, classes] = this.calculateMaxScores(scores, result[0].shape[1], result[0].shape[2]);
 
-        const indexTensor = tf.tidy(() => {
-            const boxes2 =
-                tf.tensor2d(boxes, [result[1].shape[1], result[1].shape[3]]);
-            return tf.image.nonMaxSuppression(
-                boxes2, maxScores, maxNumBoxes, minScore, minScore);
-        });
-
-        const indexes = indexTensor.dataSync();
-        indexTensor.dispose();
+        const boxes2 = tf.tensor2d(boxes, [result[1].shape[1], result[1].shape[3]]);
+        const nms = await tf.image.nonMaxSuppressionAsync(
+                                boxes2, maxScores, maxNumBoxes, minScore, minScore);
+        let indexes;
+        if(tf.getBackend() !== 'webgpu'){
+            indexes = nms.dataSync();
+        }else{
+            indexes = await nms.data();
+        }
+        boxes2.dispose();
+        nms.dispose();
 
         return this.buildDetectedObjects(
             width, height, boxes, maxScores, indexes, classes);
@@ -162,3 +195,4 @@ class MobileNetSSD extends React.Component{
 };
 
 export default MobileNetSSD;
+
