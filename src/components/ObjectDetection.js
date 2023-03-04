@@ -63,7 +63,7 @@ export function ObjectDetection(){
     useEffect(()=>{
         const loadDetector = async () =>{
           detector.current = new MobileNetSSD();
-          await detector.current.setModelBackend("webgpu");
+          await detector.current.setModelBackend("wasm");
           await detector.current.load();
         }
         loadDetector();

@@ -65,8 +65,7 @@ class MobileNetSSD extends React.Component{
     }
 
     toImageTensor(input){
-        const imageTensor = tf.browser.fromPixels(input);
-        return tf.image.resizeBilinear(imageTensor, [this.modelHeight, this.modelWidth]);
+        return tf.browser.fromPixels(input);
     }
 
     /**
@@ -90,6 +89,7 @@ class MobileNetSSD extends React.Component{
 
         return this.infer(imageTensor, maxNumBoxes, minScore);
     };
+
 
     /**
      * Dispose the tensors allocated by the model. You should call this when you
